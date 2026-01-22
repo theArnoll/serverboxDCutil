@@ -1,11 +1,14 @@
 repoDict=$(pwd)
-sudo pip3 install discord.py python-dotenv psutil simpleeval
-echo Have you done editing .env? If not, Ctrl+C and edit it now.
-pause
+sudo apt install -y python3-pip python3-venv python3-full
+python3 -m venv venv
+source venv/bin/activate
+pip install discord.py python-dotenv psutil simpleeval
+echo Have you done editing .env? If not, Ctrl+C and edit it now. If yes, press Enter to continue.
+read
 read -p "Please enter the name (SSID) of your hotspot: " WIFI_SSID
 read -s -p "Please enter your Wi-Fi Password (Password hidden): " WIFI_PASS
 
-sudo cat <<EOF > etc/systemd/system/discord-bot.service
+sudo bash -c "cat <<EOF > etc/systemd/system/discord-bot.service
 [Unit]
 Description=Discord util
 After=network.target
@@ -15,14 +18,14 @@ User=root
 
 WorkingDirectory=$repoDict
 
-ExecStart=/usr/bin/python3 $repoDict/bot.py
+ExecStart=$repoDict/bin/python $repoDict/main.py
 
 Restart=always
 RestartSec=10
 
 [Install]
 WantedBy=multi-user.target
-EOF
+EOF"
 sudo systemctl daemon-reload
 sudo systemctl enable discord-bot.service
 sudo systemctl start discord-bot.service

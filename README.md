@@ -16,17 +16,22 @@ ping               - Pong ♪
 help               - Show this help message
 ```
 
-## Instruction
+## Installation
+
+``` bash
+git clone https://pse.is/srvDCutil
+
+## Bot Setup Instruction
 
 1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
 2. Click `New Application`, give it a name, and create it.
-3. Click `Bot` → `Add Bot` at the left sidebar
+3. Click `Bot` at the left sidebar
 4. Find `Message Content Intent` and enable it.
 5. Click `Reset Token` and copy the token to [.env file](./.env).
 6. Invite the bot to your server:
-   1. Click `OAuth2` → `General` at the left sidebar.
+   1. Click `OAuth2` at the left sidebar → `OAuth2 URL Generator`.
    2. Have `bot` checkbox checked.
-   3. Check `Send Messages` and `Read Message History` in the permissions field below.
+   3. Check `Send Messages` and `Read Message History` in the `Bot Permissions` field below.
    4. Copy the generated URL, paste it to your browser, and invite the bot to your private server.
 7.  Open your Discord app, go to Settings → Advanced, and enable Developer Mode.
 8.  Go to your private Discord server, right click on your profile picture, and click `Copy User ID`. Paste it to the `ALLOWED_USER_ID` field in the [.env file](./.env).
