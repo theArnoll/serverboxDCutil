@@ -19,7 +19,11 @@ help               - Show this help message
 ## Installation
 
 ``` bash
-git clone https://pse.is/srvDCutil
+git clone https://github.com/theArnoll/serverboxDCutil.git
+cd serverboxDCutil
+chmod +x setup.sh
+chmod +x main.py
+```
 
 ## Bot Setup Instruction
 
