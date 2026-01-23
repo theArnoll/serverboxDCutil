@@ -8,7 +8,7 @@ read
 read -p "Please enter the name (SSID) of your hotspot: " WIFI_SSID
 read -s -p "Please enter your Wi-Fi Password (Password hidden): " WIFI_PASS
 
-sudo bash -c "cat <<EOF > etc/systemd/system/discord-bot.service
+sudo bash -c "cat <<EOF > /etc/systemd/system/discord-bot.service
 [Unit]
 Description=Discord util
 After=network.target
@@ -18,7 +18,7 @@ User=root
 
 WorkingDirectory=$repoDict
 
-ExecStart=$repoDict/bin/python $repoDict/main.py
+ExecStart=$repoDict/venv/bin/python $repoDict/main.py
 
 Restart=always
 RestartSec=10

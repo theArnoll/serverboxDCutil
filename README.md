@@ -26,7 +26,7 @@ git clone https://pse.is/srvDCutil
 1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
 2. Click `New Application`, give it a name, and create it.
 3. Click `Bot` at the left sidebar
-4. Find `Message Content Intent` and enable it.
+4. Find `Presence Intent`, `Server Members Intent` and `Message Content Intent` and enable it.
 5. Click `Reset Token` and copy the token to [.env file](./.env).
 6. Invite the bot to your server:
    1. Click `OAuth2` at the left sidebar → `OAuth2 URL Generator`.
@@ -39,4 +39,5 @@ git clone https://pse.is/srvDCutil
 
 ---
 
-Used Gemini for rapid prototyping; logic and system integration verified by human.
+Used Gemini for rapid prototyping; logic and system integration verified by human.  
+**Tested** in VMWare Ubuntu Server 24.04 LTS environment.
