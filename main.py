@@ -150,14 +150,15 @@ server <function>  - Server related functions:
     shutdown     - Shutdown the server (Requires confirmation)
 hotspot            - Turn on Wi-Fi hotspot
 ping               - Pong ♪
-help               - Show this help message
-    """
-    await ctx.send(f"# Available commands:\n```{help_text}```")
+help               - Show built-in help message
+commands           - Show this command list
+author             - Show bot author information"""
+    await ctx.send(f"## Available commands:\n```{help_text}```")
 
 # Author
 @bot.command()
 async def author(ctx):
-    await ctx.send("# Discord Bot by [theArnoll](https://github.com/theArnoll)\nBot repo is located at [here](https://github.com/theArnoll/serverboxDCutil)")
+    await ctx.send("## Discord Bot by [theArnoll](https://github.com/theArnoll)\nBot repo is located at [here](https://github.com/theArnoll/serverboxDCutil)")
 
 
 bot.run(TOKEN)
