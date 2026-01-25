@@ -15,7 +15,7 @@ TOKEN = os.getenv('DC_TOKEN')
 ALLOWED_USER_ID = int(os.getenv('ALLOWED_USER_ID'))
 bot = commands.Bot(
     command_prefix='>',
-    intents=discord.Intents.all()
+    intents=discord.Intents.all(),
     case_insensitive=True
 )
 # '>' is the command prefix

@@ -9,16 +9,22 @@ server <function>  - Server related functions:
     ip           - Show server local IP address
     cockpit      - Show Cockpit link
     restart bot  - Restart the bot process
-    reboot       - Reboot the server
-    shutdown     - Shutdown the server
+    reboot       - Reboot the server (Requires confirmation)
+    shutdown     - Shutdown the server (Requires confirmation)
+    aliases: svr, srv, sv, s
 hotspot            - Turn on Wi-Fi hotspot
+                     aliases: wifi
 ping               - Pong ♪
-help               - Show this help message
+help               - Show built-in help message
+commands           - Show this command list
+                     aliases: hepp, cmds, cmd
+author             - Show bot author information
 ```
 
 ## Installation
 
 ``` bash
+sudo apt install -y python3 python-is-python3 
 git clone https://github.com/theArnoll/serverboxDCutil.git
 cd serverboxDCutil
 chmod +x setup.sh
