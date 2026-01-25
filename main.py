@@ -97,7 +97,7 @@ async def server(ctx, *, function):
         ip_address = os.popen("hostname -I | awk '{print $1}'").read().strip()
         tailscale = os.popen("tailscale ip -4").read().strip()
         await ctx.send(f"[Here](https://{ip_address}:9090)\nFor remote access, use [Tailscale Cockpit](https://{tailscale}:9090)")
-    elif function == "restart bot":
+    elif function == "restart bot" or function == "rebot":
         await ctx.send("Restarting bot...")
         sys.exit(0)
     elif function == "reboot" or function == "reb":
@@ -162,12 +162,12 @@ async def commands(ctx):
 calc <expression>  - Calculate the expression
 should             - Basically a dice
 server <function>  - Server related functions:
-    status       - Show server status
-    ip           - Show server local IP address
-    cockpit      - Show Cockpit link
-    restart bot  - Restart the bot process
-    reboot       - Reboot the server (Requires confirmation)
-    shutdown     - Shutdown the server (Requires confirmation)
+    status              - Show server status
+    ip                  - Show server local IP address
+    cockpit             - Show Cockpit link
+    restart bot / rebot - Restart the bot process
+    reboot              - Reboot the server (Requires confirmation)
+    shutdown            - Shutdown the server (Requires confirmation)
     aliases: svr, srv, sv, s
 hotspot            - Turn on Wi-Fi hotspot
                      aliases: wifi
