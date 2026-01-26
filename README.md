@@ -18,6 +18,7 @@ ping               - Pong ♪
 help               - Show built-in help message
 commands           - Show this command list
                      aliases: hepp, cmds, cmd
+statusRainbow      - Show every color ">server status" will send
 author             - Show bot author information
 ```
 

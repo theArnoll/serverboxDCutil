@@ -156,6 +156,14 @@ async def hotspot(ctx):
 async def ping(ctx):
     await ctx.send("Pong ♪")
 
+@bot.command()
+async def statusRainbow(ctx):
+    clr = [0x8e44ad, 0xd35400, 0xf1c40f, 0x00ff00, 0x3498db]
+    txt = ["RA", "IN", "B", "O", "W"]
+    for text, calr in zip(txt, clr):
+        embed = discord.Embed(title=text, color=calr)
+        await ctx.send(embed=embed)
+
 @bot.command(aliases=["hepp", "cmds", "cmd"])
 async def commands(ctx):
     help_text = """
@@ -175,6 +183,7 @@ ping               - Pong ♪
 help               - Show built-in help message
 commands           - Show this command list
                      aliases: hepp, cmds, cmd
+statusRainbow      - Show every color \">server status\" will send
 author             - Show bot author information"""
     await ctx.send(f"## Available commands:\n```{help_text}```")
 
@@ -182,6 +191,5 @@ author             - Show bot author information"""
 @bot.command()
 async def author(ctx):
     await ctx.send("## Discord Bot by [theArnoll](https://github.com/theArnoll)\nBot repo is located at [here](https://github.com/theArnoll/serverboxDCutil)")
-
 
 bot.run(TOKEN)
