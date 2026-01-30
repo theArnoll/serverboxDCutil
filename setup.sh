@@ -1,5 +1,5 @@
 repoDict=$(pwd)
-sudo apt install -y python3-pip python3-venv python3-full
+sudo apt install -y python3-pip python3-venv python3-full isc-dhcp-client
 python3 -m venv venv
 source venv/bin/activate
 pip install discord.py python-dotenv psutil simpleeval
