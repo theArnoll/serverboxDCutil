@@ -10,7 +10,7 @@ import sys
 
 load_dotenv()
 
-hotspot_tog = 0
+hotspot_tog = False
 
 # Configurations
 TOKEN = os.getenv('DC_TOKEN')
@@ -153,24 +153,25 @@ async def hotspot(ctx, *, function):
         await ctx.send("Turning hotspot on...")
         os.system(f"sudo bash {Location}/hotspot.sh")
         await ctx.send(f"Command sent.\nIf Wi-Fi isn't available, please connect to server via cockpit and try running `{Location}/hotspot.sh` manually.")
-        hotspot_tog = 1
+        hotspot_tog = True
     elif(function == "off"):
         await ctx.send("Turning hotspot off...")
         os.system(f"sudo bash {Location}/hotspot_off.sh")
         await ctx.send(f"Command sent.\nIf Wi-Fi is still available, please connect to server via cockpit and try running `{Location}/hotspot_off.sh` manually.")
-        hotspot_tog = 0
+        hotspot_tog = False
     else:
         response = "Togging hotspot. Current state in record: "
-        if(hotspot_tog == 0):
-            await ctx.send(response + "off.\nTurning on...")
-            os.system(f"sudo bash {Location}/hotspot.sh")
-            await ctx.send(f"Command sent and record updated.\nIf Wi-Fi isn't available, please connect to server via cockpit and try running `{Location}/hotspot.sh` manually.")
-            hotspot_tog = 1
-        else:
+        if(hotspot_tog):
             await ctx.send(response + "on.\nTurning off...")
             os.system(f"sudo bash {Location}/hotspot_off.sh")
             await ctx.send(f"Command sent and record updated.\nIf Wi-Fi is still available, please connect to server via cockpit and try running `{Location}/hotspot_off.sh` manually.")
-            hotspot_tog = 0
+            hotspot_tog = False
+            
+        else:
+            await ctx.send(response + "off.\nTurning on...")
+            os.system(f"sudo bash {Location}/hotspot.sh")
+            await ctx.send(f"Command sent and record updated.\nIf Wi-Fi isn't available, please connect to server via cockpit and try running `{Location}/hotspot.sh` manually.")
+            hotspot_tog = True
 
 # No comment needed
 @bot.command()
