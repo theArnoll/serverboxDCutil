@@ -10,6 +10,8 @@ import sys
 
 load_dotenv()
 
+hotspot_tog = 0
+
 # Configurations
 TOKEN = os.getenv('DC_TOKEN')
 ALLOWED_USER_ID = int(os.getenv('ALLOWED_USER_ID'))
@@ -145,11 +147,30 @@ shutdown     - Shutdown the server (Requires confirmation)
 
 # Wi-Fi Hotspot activation
 @bot.command(aliases=["wifi"])
-async def hotspot(ctx):
-    await ctx.send("Turning hotspot on...")
+async def hotspot(ctx, *, function):
     Location = os.getenv('REPO_PATH')
-    os.system(f"sudo bash {Location}/hotspot.sh")
-    await ctx.send(f"Command sent.\nIf Wi-Fi isn't available, please check the server by cockpit and try manually run `{Location}/hotspot.sh.`")
+    if(function == "on"):
+        await ctx.send("Turning hotspot on...")
+        os.system(f"sudo bash {Location}/hotspot.sh")
+        await ctx.send(f"Command sent.\nIf Wi-Fi isn't available, please connect to server via cockpit and try running `{Location}/hotspot.sh` manually.")
+        hotspot_tog = 1
+    elif(function == "off"):
+        await ctx.send("Turning hotspot off...")
+        os.system(f"sudo bash {Location}/hotspot_off.sh")
+        await ctx.send(f"Command sent.\nIf Wi-Fi is still available, please connect to server via cockpit and try running `{Location}/hotspot_off.sh` manually.")
+        hotspot_tog = 0
+    else:
+        response = "Togging hotspot. Current state in record: "
+        if(hotspot_tog == 0):
+            await ctx.send(response + "off.\nTurning on...")
+            os.system(f"sudo bash {Location}/hotspot.sh")
+            await ctx.send(f"Command sent and record updated.\nIf Wi-Fi isn't available, please connect to server via cockpit and try running `{Location}/hotspot.sh` manually.")
+            hotspot_tog = 1
+        else:
+            await ctx.send(response + "on.\nTurning off...")
+            os.system(f"sudo bash {Location}/hotspot_off.sh")
+            await ctx.send(f"Command sent and record updated.\nIf Wi-Fi is still available, please connect to server via cockpit and try running `{Location}/hotspot_off.sh` manually.")
+            hotspot_tog = 0
 
 # No comment needed
 @bot.command()
@@ -177,9 +198,12 @@ server <function>  - Server related functions:
     reboot              - Reboot the server (Requires confirmation)
     shutdown            - Shutdown the server (Requires confirmation)
     aliases: svr, srv, sv, s
-hotspot            - Turn on Wi-Fi hotspot
-                     aliases: wifi
-ping               - Pong ♪
+hotspot <function> - Toggle Wi-Fi hotspot
+    on                  - Turn on Wi-Fi hotspot and turn off Bluetooth
+    off                 - Turn off Wi-Fi hotspot and turn on Bluetooth
+    [no parameter]      - Toggle between on and off by record
+    aliases: wifi
+ping               - Pong ♪ (Confirming if the server connected to the internet and able to response)
 help               - Show built-in help message
 commands           - Show this command list
                      aliases: hepp, cmds, cmd

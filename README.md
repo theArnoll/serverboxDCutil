@@ -12,9 +12,12 @@ server <function>  - Server related functions:
     reboot              - Reboot the server (Requires confirmation)
     shutdown            - Shutdown the server (Requires confirmation)
     aliases: svr, srv, sv, s
-hotspot            - Turn on Wi-Fi hotspot
-                     aliases: wifi
-ping               - Pong ♪
+hotspot <function> - Toggle Wi-Fi hotspot
+    on                  - Turn on Wi-Fi hotspot and turn off Bluetooth
+    off                 - Turn off Wi-Fi hotspot and turn on Bluetooth
+    [no parameter]      - Toggle between on and off by record
+    aliases: wifi
+ping               - Pong ♪ (Confirming if the server connected to the internet and able to response)
 help               - Show built-in help message
 commands           - Show this command list
                      aliases: hepp, cmds, cmd

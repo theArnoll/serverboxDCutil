@@ -1,7 +1,8 @@
 #!/bin/bash
 WIFI_IFACE=""
-SSID="blackbox"
-PASSWORD="arnold10054"
+SSID="Your Wi-Fi"
+PASSWORD="WiFiPassword"
+sudo rfkill block bluetooth
 if ! sudo nmcli device wifi hotspot ifname "$WIFI_IFACE" con-name "blackbox-Hotspot" ssid "$SSID" password "$PASSWORD"; then
     echo "┌───┬───────┬─────────────────────────────────────────────────────────────┬───┬───┬───┐"
     echo "│ ! │ Error │ Setup failed.                                               │ _ │ O │ X │"

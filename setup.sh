@@ -37,6 +37,7 @@ cat <<EOF > hotspot.sh
 WIFI_IFACE="$WIFI_IFACE"
 SSID="$WIFI_SSID"
 PASSWORD="$WIFI_PASS"
+sudo rfkill block bluetooth
 if ! sudo nmcli device wifi hotspot ifname "\$WIFI_IFACE" con-name "blackbox-Hotspot" ssid "\$SSID" password "\$PASSWORD"; then
     echo "┌───┬───────┬─────────────────────────────────────────────────────────────┬───┬───┬───┐"
     echo "│ ! │ Error │ Setup failed.                                               │ _ │ O │ X │"
@@ -53,3 +54,9 @@ fi
 echo "-> Hotspot created successfully!"
 EOF
 chmod +x hotspot.sh
+
+cat <<EOF > hotspot_off.sh
+sudo nmcli con down "blackbox-Hotspot"
+sudo rfkill unblock bluetooth
+EOF
+chmod +x hotspot_off.sh
