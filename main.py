@@ -147,7 +147,8 @@ shutdown     - Shutdown the server (Requires confirmation)
 
 # Wi-Fi Hotspot activation
 @bot.command(aliases=["wifi"])
-async def hotspot(ctx, *, function):
+async def hotspot(ctx, *, function="tog"):
+    global hotspot_tog
     Location = os.getenv('REPO_PATH')
     if(function == "on"):
         await ctx.send("Turning hotspot on...")
@@ -162,13 +163,12 @@ async def hotspot(ctx, *, function):
     else:
         response = "Togging hotspot. Current state in record: "
         if(hotspot_tog):
-            await ctx.send(response + "on.\nTurning off...")
+            await ctx.send(response + "`on`.\nTurning off...")
             os.system(f"sudo bash {Location}/hotspot_off.sh")
             await ctx.send(f"Command sent and record updated.\nIf Wi-Fi is still available, please connect to server via cockpit and try running `{Location}/hotspot_off.sh` manually.")
             hotspot_tog = False
-            
         else:
-            await ctx.send(response + "off.\nTurning on...")
+            await ctx.send(response + "`off`.\nTurning on...")
             os.system(f"sudo bash {Location}/hotspot.sh")
             await ctx.send(f"Command sent and record updated.\nIf Wi-Fi isn't available, please connect to server via cockpit and try running `{Location}/hotspot.sh` manually.")
             hotspot_tog = True
