@@ -82,7 +82,8 @@ Used Gemini for rapid prototyping; logic and system integration verified by huma
 **Tested** in:
 
 - VMWare Ubuntu Server 24.04 LTS environment.
-- Intel N100 mini PC **`Currently running`** Spec:
+- Intel N100 mini PC **`Currently running`**
+  Spec:
   - Intel N100
   - 8GB DDR5
   - 120GB 2.5" SSD (connected via USB)

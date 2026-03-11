@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 from simpleeval import simple_eval
 import asyncio
 import sys
+import requests
+import shutil
 
 load_dotenv()
 
@@ -93,8 +95,22 @@ async def server(ctx, *, function):
     elif function == "IP" or function == "ip":
         ip_address = os.popen("hostname -I | awk '{print $1}'").read().strip()
         tailscale = os.popen("tailscale ip -4").read().strip()
-        await ctx.send(f"Server local IP Address: `{ip_address}`.\n[Cockpit](https://{ip_address}:9090)\nFor remote access, check Tailscace yourself or click:")
-        await ctx.send(f"[Tailscale Cockpit](https://{tailscale}:9090)")
+        ngrok_path = shutil.which("ngrok")
+        ipMsg = f"Server local IP Address: `{ip_address}`.\n[Cockpit](https://{ip_address}:9090)"
+        if(tailscale != ""):
+            ipMsg += "\nFor remote access, check Tailscace yourself or click: [Tailscale Cockpit](https://{tailscale}:9090)"
+        if ngrok_path is not None:
+            try:
+                response = requests.get("http://localhost:4040/api/tunnels", timeout=2)
+                if(response.status_code == 200):        # ↳ ngrok will provide tunnel information from JSON API on localhost:4040
+                    data = response.json()
+                    ngrokURL = data['tunnels'][0]['public_url'] # get the public_url of the first tunnel
+                    ipMsg += f"\n[ngrok URL]({ngrokURL})"
+                else:
+                    ipMsg += f"\nngrok is running but API is unreachable."
+            except Exception:
+                ipMsg += f"\nngrok is currently offline."
+            await ctx.send(ipMsg)
     elif function == "cockpit" or function == "Cockpit":
         ip_address = os.popen("hostname -I | awk '{print $1}'").read().strip()
         tailscale = os.popen("tailscale ip -4").read().strip()
