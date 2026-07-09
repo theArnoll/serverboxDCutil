@@ -38,7 +38,7 @@ WIFI_IFACE="$WIFI_IFACE"
 SSID="$WIFI_SSID"
 PASSWORD="$WIFI_PASS"
 sudo rfkill block bluetooth
-if ! sudo nmcli device wifi hotspot ifname "\$WIFI_IFACE" con-name "blackbox-Hotspot" ssid "\$SSID" password "\$PASSWORD"; then
+if ! sudo nmcli device wifi hotspot ifname "\$WIFI_IFACE" con-name "serverbox-Hotspot" ssid "\$SSID" password "\$PASSWORD"; then
     echo "┌───┬───────┬─────────────────────────────────────────────────────────────┬───┬───┬───┐"
     echo "│ ! │ Error │ Setup failed.                                               │ _ │ O │ X │"
     echo "├───┴───────┴─────────────────────────────────────────────────────────────┴───┴───┴───┤"
@@ -56,7 +56,7 @@ EOF
 chmod +x hotspot.sh
 
 cat <<EOF > hotspot_off.sh
-sudo nmcli con down "blackbox-Hotspot"
+sudo nmcli con down "serverbox-Hotspot"
 sudo rfkill unblock bluetooth
 EOF
 chmod +x hotspot_off.sh
