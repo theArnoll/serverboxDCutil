@@ -1,6 +1,7 @@
 # ServerBox Discord Utility Bot
 
 ## Functions
+
 ```
 calc <expression>  - Calculate the expression
 should             - Basically a dice
@@ -23,6 +24,7 @@ commands           - Show this command list
                      aliases: hepp, cmds, cmd
 statusRainbow      - Show every color ">server status" will send
 author             - Show bot author information
+wake               - Remote booting PC
 ```
 
 ## Installation

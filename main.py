@@ -10,12 +10,15 @@ import sys
 import requests
 import shutil
 
+from wakeonlan import send_magic_packet
+
 load_dotenv()
 
 hotspot_tog = False
 
 # Configurations
 TOKEN = os.getenv('DC_TOKEN')
+MAC = os.getenv('MAC')
 ALLOWED_USER_ID = int(os.getenv('ALLOWED_USER_ID'))
 bot = commands.Bot(
     command_prefix='>',
@@ -225,12 +228,18 @@ help               - Show built-in help message
 commands           - Show this command list
                      aliases: hepp, cmds, cmd
 statusRainbow      - Show every color \">server status\" will send
-author             - Show bot author information"""
+author             - Show bot author information
+wake               - Remote booting PC"""
     await ctx.send(f"## Available commands:\n```{help_text}```")
 
 # Author
 @bot.command()
 async def author(ctx):
     await ctx.send("## Discord Bot by [theArnoll](https://github.com/theArnoll)\nBot repo is located at [here](https://github.com/theArnoll/serverboxDCutil)")
+
+@bot.command()
+async def wake(ctx):
+    send_magic_packet(MAC)
+    await ctx.send(f"Remote booted PC.")
 
 bot.run(TOKEN)
