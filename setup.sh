@@ -1,8 +1,8 @@
 repoDict=$(pwd)
-sudo apt install -y python3-pip python3-venv python3-full isc-dhcp-client
+sudo apt install -y python3-pip python3-venv python3-full
 python3 -m venv venv
 source venv/bin/activate
-pip install discord.py python-dotenv psutil simpleeval
+pip install discord.py python-dotenv psutil simpleeval aiohttp
 echo Have you done editing .env? If not, Ctrl+C and edit it now. If yes, press Enter to continue.
 read
 read -p "Please enter the name (SSID) of your hotspot: " WIFI_SSID

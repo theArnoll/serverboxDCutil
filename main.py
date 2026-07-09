@@ -1,5 +1,5 @@
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 import random
 import psutil  # sysinfo
 import os
@@ -7,10 +7,13 @@ from dotenv import load_dotenv
 from simpleeval import simple_eval
 import asyncio
 import sys
-import requests
 import shutil
+import aiohttp  # Replace requests with async aiohttp
+import datetime
 
 from wakeonlan import send_magic_packet
+
+last_weather_date = None  # Record if weather has been checked today
 
 load_dotenv()
 
@@ -20,6 +23,12 @@ hotspot_tog = False
 TOKEN = os.getenv('DC_TOKEN')
 MAC = os.getenv('MAC')
 ALLOWED_USER_ID = int(os.getenv('ALLOWED_USER_ID'))
+CWA_API_KEY = os.getenv('CWA_API_KEY')
+TARGET_CITY = os.getenv('TARGET_CITY')
+cryptoToMonitor = os.getenv('monitoringCrypto')
+cryptoToCurrency = os.getenv('cryptoToCurrency')
+alertThreshold = float(os.getenv('cryptoToCurrencyAlertThreshold'))
+
 bot = commands.Bot(
     command_prefix='>',
     intents=discord.Intents.all(),
@@ -32,11 +41,157 @@ async def on_ready():
     print(f'DC tool is now online: {bot.user}')
     # Bot status (ex. Playing N100 Server)
     # await bot.change_presence(activity=discord.Game(name="N100 Server"))
+    
+    # Start background monitoring schedule
+    if not auto_monitor.is_running():
+        auto_monitor.start()
 
 # Check if the user is allowed
 @bot.check
 async def globally_block_strangers(ctx):
     return ctx.author.id == ALLOWED_USER_ID
+
+async def get_cmd_output(cmd):
+    proc = await asyncio.create_subprocess_shell(cmd, stdout=asyncio.subprocess.PIPE)
+    stdout, _ = await proc.communicate()
+    return stdout.decode().strip()
+
+async def fetch_temperatures():
+    """Filter via RequestURL parameters and accurately parse CWA township forecast JSON"""
+    if not CWA_API_KEY: return []
+    
+    COUNTY_MAP = {
+        "宜蘭縣": "F-D0047-001", "桃園市": "F-D0047-005", "新竹縣": "F-D0047-009",
+        "苗栗縣": "F-D0047-013", "彰化縣": "F-D0047-017", "南投縣": "F-D0047-021",
+        "雲林縣": "F-D0047-025", "嘉義縣": "F-D0047-029", "屏東縣": "F-D0047-033",
+        "臺東縣": "F-D0047-037", "花蓮縣": "F-D0047-041", "澎湖縣": "F-D0047-045",
+        "基隆市": "F-D0047-049", "新竹市": "F-D0047-053", "嘉義市": "F-D0047-057",
+        "臺北市": "F-D0047-061", "高雄市": "F-D0047-065", "新北市": "F-D0047-069",
+        "臺中市": "F-D0047-073", "臺南市": "F-D0047-077", "連江縣": "F-D0047-081",
+        "金門縣": "F-D0047-085"
+    }
+
+    alerts = []
+    target_regions_str = os.getenv('TARGET_LOCATION', '')
+    if not target_regions_str: return alerts
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            for region in target_regions_str.split(','):
+                region = region.strip()
+                if '-' not in region: continue
+                
+                county, town = region.split('-', 1)
+                county = county.replace("台", "臺") # Auto-correct variant Chinese characters
+                
+                dataset_id = COUNTY_MAP.get(county)
+                if not dataset_id: continue
+                
+                url = f"https://opendata.cwa.gov.tw/api/v1/rest/datastore/{dataset_id}"
+                
+                params = {
+                    "Authorization": CWA_API_KEY,
+                    "LocationName": town,
+                    "ElementName": "溫度"
+                }
+                
+                async with session.get(url, params=params) as response:
+                    if response.status != 200:
+                        print(f"! Request failed for {county}-{town}, status code: {response.status}")
+                        continue
+                        
+                    data = await response.json()
+                    
+                    locations_data = data.get("records", {}).get("Locations", [])
+                    if not locations_data: continue
+                        
+                    county_data = locations_data[0]
+                    location_list = county_data.get("Location", [])
+                    
+                    if not location_list:
+                        print(f"! CWA could not find data for {town}.")
+                        continue
+                        
+                    town_data = location_list[0]
+                    highest_temp = 0.0
+                    
+                    for el in town_data.get("WeatherElement", []):
+                        if el.get("ElementName") == "溫度":
+                            # Township forecast provides data every 3 hours; scan the first 8 blocks (next 24 hours)
+                            for time_block in el.get("Time", [])[:8]:
+                                try:
+                                    # Match JSON: "ElementValue": [{"Temperature": "33"}]
+                                    val = float(time_block["ElementValue"][0]["Temperature"])
+                                    if val > highest_temp:
+                                        highest_temp = val
+                                except (IndexError, ValueError, KeyError, TypeError):
+                                    continue
+                            break
+                            
+                    print(f"> Found temperature for {county} {town}: {highest_temp if highest_temp > 0 else 'None'}")
+                    
+                    if highest_temp >= 35.0:
+                        alerts.append((county, town, highest_temp))
+                                
+    except Exception as e:
+        print(f"X CWA API request exception error: {e}")
+        
+    return alerts
+
+async def fetch_crypto_price():
+    """Fetch Dogecoin price asynchronously via CoinGecko"""
+    url = "https://api.coingecko.com/api/v3/simple/price"
+    params = {"ids": cryptoToMonitor, "vs_currencies": cryptoToCurrency}
+    
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, params=params) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    return float(data[cryptoToMonitor][cryptoToCurrency])
+    except Exception as e:
+        print(f"DOGE API request error: {e}")
+    return None
+
+@tasks.loop(minutes=10.0)  # Check every 10 minutes to improve time accuracy
+async def auto_monitor():
+    global last_weather_date
+    try:
+        # Get current system time
+        now = datetime.datetime.now()
+        current_hour = now.hour      # Current hour (0-23)
+        current_date = now.date()    # Today's date
+        
+        user = bot.get_user(ALLOWED_USER_ID) or await bot.fetch_user(ALLOWED_USER_ID)
+        
+        # Weather alert | 7 AM
+        if current_hour == 7 and last_weather_date != current_date:
+            temp_alerts = await fetch_temperatures()
+            if temp_alerts:
+                alert_msgs = []
+                for county, town, temp in temp_alerts:
+                    alert_msgs.append(f"• **{county}{town}**: `{temp}°C`")
+                msg = "⚠️ **High Temperature Alert**: The following areas are forecasted to reach or exceed the maximum temperature threshold today!\n" + "\n".join(alert_msgs)
+                await user.send(msg)
+            
+            # Anti-spam flag: Ensure we only send once during the 7 AM hour
+            last_weather_date = current_date
+            
+        # Crypto traking | 10 AM to 9 PM corresponds to 24-hour format 10 to 21 
+        if 10 <= current_hour <= 21:
+            doge_price = await fetch_crypto_price()
+            if doge_price and doge_price >= alertThreshold:
+                await user.send(f"🚀 **DOGE Price Alert**: Currently 1 DOGE has exceeded the set threshold, reaching `NT$ {doge_price}`!")
+                
+    except Exception as e:
+        print(f"Background monitoring task error: {e}")
+
+@auto_monitor.before_loop
+async def before_auto_monitor():
+    # Ensure the Bot is fully ready before starting the loop
+    await bot.wait_until_ready()
+
+# ================= Original Commands =================
 
 # calculator
 @bot.command(aliases=["calculate"])
@@ -96,23 +251,24 @@ async def server(ctx, *, function):
         embed.add_field(name="Disk Space", value=f"`{disk_usage}%` Used", inline=True)
         await ctx.send(embed=embed)
     elif function == "IP" or function == "ip":
-        ip_address = os.popen("hostname -I | awk '{print $1}'").read().strip()
-        tailscale = os.popen("tailscale ip -4").read().strip()
+        ip_address = await get_cmd_output("hostname -I | awk '{print $1}'")
+        tailscale = await get_cmd_output("tailscale ip -4")
         ngrok_path = shutil.which("ngrok")
         ipMsg = f"Server local IP Address: `{ip_address}`.\n[Cockpit](https://{ip_address}:9090)"
         if(tailscale != ""):
-            ipMsg += "\nFor remote access, check Tailscace yourself or click: [Tailscale Cockpit](https://{tailscale}:9090)"
+            ipMsg += f"\nFor remote access, check Tailscace yourself or click: [Tailscale Cockpit](https://{tailscale}:9090)"
         if ngrok_path is not None:
             try:
-                response = requests.get("http://localhost:4040/api/tunnels", timeout=2)
-                if(response.status_code == 200):        # ↳ ngrok will provide tunnel information from JSON API on localhost:4040
-                    data = response.json()
-                    ngrokURL = data['tunnels'][0]['public_url'] # get the public_url of the first tunnel
-                    ipMsg += f"\n[ngrok URL]({ngrokURL})"
-                else:
-                    ipMsg += f"\nngrok is running but API is unreachable."
+                async with aiohttp.ClientSession() as session:
+                    async with session.get("http://localhost:4040/api/tunnels", timeout=2) as response:
+                        if response.status == 200:
+                            data = await response.json()
+                            ngrokURL = data['tunnels'][0]['public_url']
+                            ipMsg += f"\n[ngrok URL]({ngrokURL})"
+                        else:
+                            ipMsg += "\nngrok is running but API is unreachable."
             except Exception:
-                ipMsg += f"\nngrok is currently offline."
+                ipMsg += "\nngrok is currently offline."
             await ctx.send(ipMsg)
     elif function == "cockpit" or function == "Cockpit":
         ip_address = os.popen("hostname -I | awk '{print $1}'").read().strip()
