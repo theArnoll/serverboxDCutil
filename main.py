@@ -43,8 +43,8 @@ async def on_ready():
     # await bot.change_presence(activity=discord.Game(name="N100 Server"))
     
     # Start background monitoring schedule
-    if not auto_monitor.is_running():
-        auto_monitor.start()
+    if not autoMonitor.is_running():
+        autoMonitor.start()
 
 # Check if the user is allowed
 @bot.check
@@ -56,10 +56,8 @@ async def get_cmd_output(cmd):
     stdout, _ = await proc.communicate()
     return stdout.decode().strip()
 
-async def fetch_temperatures():
-    """Filter via RequestURL parameters and accurately parse CWA township forecast JSON"""
+async def fetch_temperatures(thresholdTemp):
     if not CWA_API_KEY: return []
-    
     COUNTY_MAP = {
         "宜蘭縣": "F-D0047-001", "桃園市": "F-D0047-005", "新竹縣": "F-D0047-009",
         "苗栗縣": "F-D0047-013", "彰化縣": "F-D0047-017", "南投縣": "F-D0047-021",
@@ -70,11 +68,9 @@ async def fetch_temperatures():
         "臺中市": "F-D0047-073", "臺南市": "F-D0047-077", "連江縣": "F-D0047-081",
         "金門縣": "F-D0047-085"
     }
-
     alerts = []
     target_regions_str = os.getenv('TARGET_LOCATION', '')
     if not target_regions_str: return alerts
-
     try:
         async with aiohttp.ClientSession() as session:
             for region in target_regions_str.split(','):
@@ -120,7 +116,6 @@ async def fetch_temperatures():
                             # Township forecast provides data every 3 hours; scan the first 8 blocks (next 24 hours)
                             for time_block in el.get("Time", [])[:8]:
                                 try:
-                                    # Match JSON: "ElementValue": [{"Temperature": "33"}]
                                     val = float(time_block["ElementValue"][0]["Temperature"])
                                     if val > highest_temp:
                                         highest_temp = val
@@ -130,19 +125,16 @@ async def fetch_temperatures():
                             
                     print(f"> Found temperature for {county} {town}: {highest_temp if highest_temp > 0 else 'None'}")
                     
-                    if highest_temp >= 35.0:
+                    if highest_temp >= thresholdTemp:
                         alerts.append((county, town, highest_temp))
-                                
     except Exception as e:
         print(f"X CWA API request exception error: {e}")
-        
+
     return alerts
 
 async def fetch_crypto_price():
-    """Fetch Dogecoin price asynchronously via CoinGecko"""
     url = "https://api.coingecko.com/api/v3/simple/price"
     params = {"ids": cryptoToMonitor, "vs_currencies": cryptoToCurrency}
-    
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(url, params=params) as response:
@@ -150,48 +142,79 @@ async def fetch_crypto_price():
                     data = await response.json()
                     return float(data[cryptoToMonitor][cryptoToCurrency])
     except Exception as e:
-        print(f"DOGE API request error: {e}")
+        print(f"Crypto API request error: {e}")
     return None
 
+lastCryptoPrice = 0.0
+sameCryptoPrice = 0
+
 @tasks.loop(minutes=10.0)  # Check every 10 minutes to improve time accuracy
-async def auto_monitor():
-    global last_weather_date
+async def autoMonitor(test: bool = False):
+    global last_weather_date, lastCryptoPrice, sameCryptoPrice
     try:
-        # Get current system time
         now = datetime.datetime.now()
-        current_hour = now.hour      # Current hour (0-23)
-        current_date = now.date()    # Today's date
-        
+        currentHour = now.hour
+        currentMinute = now.minute
+        currentDate = now.date()
+        threshTemp = 35.0
+        threshPrice = alertThreshold
+
+        if test:
+            currentHour = 7
+            currentMinute = 0
+            currentDate = datetime.date(2026, 1, 23)
+            threshTemp = -100.0
+            threshPrice = 0.0
         user = bot.get_user(ALLOWED_USER_ID) or await bot.fetch_user(ALLOWED_USER_ID)
-        
+
         # Weather alert | 7 AM
-        if current_hour == 7 and last_weather_date != current_date:
-            temp_alerts = await fetch_temperatures()
+        if currentHour == 7 and (last_weather_date != currentDate or test):
+            temp_alerts = await fetch_temperatures(threshTemp)
             if temp_alerts:
                 alert_msgs = []
                 for county, town, temp in temp_alerts:
                     alert_msgs.append(f"• **{county}{town}**: `{temp}°C`")
                 msg = "⚠️ **High Temperature Alert**: The following areas are forecasted to reach or exceed the maximum temperature threshold today!\n" + "\n".join(alert_msgs)
                 await user.send(msg)
-            
-            # Anti-spam flag: Ensure we only send once during the 7 AM hour
-            last_weather_date = current_date
-            
-        # Crypto traking | 10 AM to 9 PM corresponds to 24-hour format 10 to 21 
-        if 10 <= current_hour <= 21:
-            doge_price = await fetch_crypto_price()
-            if doge_price and doge_price >= alertThreshold:
-                await user.send(f"🚀 **DOGE Price Alert**: Currently 1 DOGE has exceeded the set threshold, reaching `NT$ {doge_price}`!")
+            # Only update the anti-spam flag in production
+            if not test:
+                last_weather_date = currentDate
+        
+        if test:
+            currentHour = 12  # 符合 10 <= hour <= 21
+            currentMinute = 5 # 符合 minute < 10
+
+        # Crypto tracking | 10 AM to 9 PM (10 to 21)
+        if 10 <= currentHour <= 21 and (currentMinute < 10 or test):
+            cryptoPrice = await fetch_crypto_price()
+            if cryptoPrice and cryptoPrice >= threshPrice:
+                price_changed = (lastCryptoPrice != cryptoPrice)
                 
+                if price_changed or test: # Allow test mode to pass through
+                    msgToSend = f"🚀 **{cryptoToMonitor.capitalize()} Price Alert**: The price has changed, reaching `{cryptoPrice} {cryptoToCurrency.upper()}`!"
+                    if lastCryptoPrice != 0.0:
+                        diff = cryptoPrice - lastCryptoPrice
+                        msgToSend += f"\nPrice difference: `{diff:.2f} {cryptoToCurrency.upper()}`"
+                    await user.send(msgToSend)
+                    if not test:
+                        lastCryptoPrice = cryptoPrice
+                        sameCryptoPrice = 0
+                elif sameCryptoPrice >= 3:
+                    msgToSend = f"📊 **{cryptoToMonitor.capitalize()} Stability Report**: Price is holding steady at `{cryptoPrice} {cryptoToCurrency.upper()}` for 3 hours. System is running normally."
+                    await user.send(msgToSend)
+                    if not test:
+                        sameCryptoPrice = 0
+                else:
+                    if not test:
+                        sameCryptoPrice += 1
+
     except Exception as e:
         print(f"Background monitoring task error: {e}")
 
-@auto_monitor.before_loop
-async def before_auto_monitor():
+@autoMonitor.before_loop
+async def before_autoMonitor():
     # Ensure the Bot is fully ready before starting the loop
     await bot.wait_until_ready()
-
-# ================= Original Commands =================
 
 # calculator
 @bot.command(aliases=["calculate"])
@@ -314,6 +337,7 @@ status       - Show server status
 ip           - Show server local IP address
 cockpit      - Show Cockpit link
 restart bot  - Restart the bot process
+               alias: rebot
 reboot       - Reboot the server (Requires confirmation)
                alias: reb
 shutdown     - Shutdown the server (Requires confirmation)
@@ -385,7 +409,8 @@ commands           - Show this command list
                      aliases: hepp, cmds, cmd
 statusRainbow      - Show every color \">server status\" will send
 author             - Show bot author information
-wake               - Remote booting PC"""
+wake               - Remote booting PC
+testNotif          - Test notification system"""
     await ctx.send(f"## Available commands:\n```{help_text}```")
 
 # Author
@@ -397,5 +422,10 @@ async def author(ctx):
 async def wake(ctx):
     send_magic_packet(MAC)
     await ctx.send(f"Remote booted PC.")
+
+@bot.command()
+async def testNotif(ctx):
+    await ctx.send("Running full integration test for monitor system...")
+    await autoMonitor.coro(True)
 
 bot.run(TOKEN)

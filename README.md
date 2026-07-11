@@ -42,13 +42,14 @@ commands           - Show this command list
 statusRainbow      - Show every color ">server status" will send
 author             - Show bot author information
 wake               - Remote booting PC
+testNotif          - Test notification system
 ```
 
 ### Passive Features
 
 #### Taiwanese extreme heat forecast in 24 hours
 
-> **! Requires Traditional Chinese input on server side.**
+> **! Requires Traditional Chinese input on server side.**  
 > &emsp;Recommends to type Chinese in cockpit terminal.
 
 You can enable the extreme heat forcast tool by setting up the CWA API key and filling the location you want to track in `.env`.
@@ -143,7 +144,7 @@ Used Gemini for rapid prototyping; logic and system integration verified by huma
 **Tested** in:
 
 - VMWare Ubuntu Server 24.04 LTS environment.
-- Intel N100 mini PC **`Currently running`**
+- Intel N100 mini PC **`Currently running`**  
   Spec:
   - Intel N100
   - 8GB DDR5
