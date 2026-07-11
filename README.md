@@ -49,7 +49,7 @@ testNotif          - Test notification system
 
 #### Taiwanese extreme heat forecast in 24 hours
 
-> **! Requires Traditional Chinese input on server side.**  
+> **`!` Requires Traditional Chinese input on server side.**  
 > &emsp;Recommends to type Chinese in cockpit terminal.
 
 You can enable the extreme heat forcast tool by setting up the CWA API key and filling the location you want to track in `.env`.
@@ -57,13 +57,13 @@ You can enable the extreme heat forcast tool by setting up the CWA API key and f
 Setup guide:
 
 1. Login or sign up an account on [中央氣象署氣象資料開放平臺(CWA OPEN WEATHER DATA)](https://opendata.cwa.gov.tw/userLogin)
-   If you need to sign up, make sure after signd up, go back to the link above and **log in on THAT webpage**, not the page you'll eventually be direct to after you go through the sign up step.
+   If you need to sign up, make sure after signd up, go back to the link above and **log in on THAT webpage**, not the page you'll eventually be direct to after you go through the sign up step.  
    **Chinese ability or translator is required during sign up**
 2. Click "取得授權碼" or "Get Authorization Key" button.
 3. There will be a line of red text append on the side of the button that should start with "CWA-". That's your API key. Copy it.
 4. Open `.env` and fill in the API key you just copied into `CWA_API_KEY=`
-5. Fill in your location name in the format of [City/county name]-[District name] **in Chinese** into `LOCATION_NAME=`, e.g. `台北市-中正區`, `高雄市-苓雅區`. 
-   You can also fill multiple locations at the same time. Just separate them with a comma, e.g. `台北市-中正區,臺中市-中區,高雄市-苓雅區`. 
+5. Fill in your location name in the format of [City/county name]-[District name] **in Chinese** into `LOCATION_NAME=`, e.g. `台北市-中正區`, `高雄市-苓雅區`.  
+   You can also fill multiple locations at the same time. Just separate them with a comma, e.g. `台北市-中正區,臺中市-中區,高雄市-苓雅區`.  
    *Note that you should NOT put any other characters including space in the location name*.
 
 After the setup, the bot will send you a message <!-- like below --> when any of your tracked location are expected to have extreme heat in 24 hours at roughly 7:00 ~ 7:10 AM.
